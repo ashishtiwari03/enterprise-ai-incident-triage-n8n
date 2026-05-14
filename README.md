@@ -10,6 +10,10 @@ This was built to mirror the kind of AI automation now appearing in enterprise e
 
 ![Workflow](screenshots/workflow-canvas.png)
 
+### Architecture Diagram
+
+![Architecture Diagram](screenshots/architecture-diagram.png)
+
 ### API Test
 
 ![API Test](screenshots/powershell-test.png)
