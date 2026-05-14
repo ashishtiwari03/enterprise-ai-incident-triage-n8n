@@ -1,8 +1,8 @@
 # Enterprise AI Incident Triage with n8n
 
-Production-style workflow automation for internal IT support. The project uses n8n to classify incoming incidents, retrieve relevant knowledge-base guidance, decide whether human approval is needed, and return an auditable triage response.
+I built this project to practice enterprise-style AI workflow automation with n8n. The workflow accepts an IT incident through a webhook, normalizes the request, matches it against a small runbook knowledge base, classifies severity and risk, and decides whether the case needs human approval.
 
-This was built to mirror the kind of AI automation now appearing in enterprise environments: controlled workflows, deterministic routing, retrieval-grounded assistance, and escalation gates instead of a loose chatbot.
+The current version uses deterministic JavaScript logic and local JSON data so it can run without paid APIs. It is structured so an LLM, vector database, Jira, ServiceNow, or Microsoft Teams step can be added later.
 
 ## Workflow Preview
 
@@ -31,18 +31,24 @@ This was built to mirror the kind of AI automation now appearing in enterprise e
 - Decides whether the case can be handled automatically or needs escalation
 - Produces a structured triage response with confidence, next steps, and audit fields
 
-## Why This Project Matters
+## Implementation Notes
 
-Enterprise teams do not need another demo that only calls an LLM. They need workflows that connect AI with operational rules, approvals, traceability, and existing systems. This project demonstrates that pattern using n8n as the orchestration layer.
+This is intentionally a small local version of an enterprise incident workflow. The first version focuses on making the routing logic visible and easy to test before adding external systems.
 
-Relevant areas:
+Current scope:
 
 - AI workflow orchestration
 - IT incident and request management
-- RAG-style knowledge retrieval
+- runbook-style knowledge retrieval
 - Human-in-the-loop approval
 - Enterprise automation
 - SAP, Microsoft 365, ServiceNow, Jira, and internal support style processes
+
+Limitations:
+
+- The knowledge retrieval step uses keyword scoring instead of vector search.
+- The workflow returns a ticket stub instead of creating a real Jira, ServiceNow, or Teams item.
+- The sample incidents are synthetic and only cover a few common IT support cases.
 
 ## Tech Stack
 
@@ -66,7 +72,7 @@ The included workflow runs without paid APIs. It is designed so an OpenAI-compat
 │   └── knowledge-base.json
 ├── docs/
 │   ├── architecture.md
-│   ├── recruiter-summary.md
+│   ├── project-summary.md
 │   └── linkedin-post.md
 └── .env.example
 ```
@@ -147,7 +153,3 @@ Invoke-RestMethod -Method Post -Uri "http://localhost:5678/webhook/enterprise-in
 - Send approval requests through Microsoft Teams or Slack
 - Store audit events in PostgreSQL
 - Add evaluation tests for false routing and escalation misses
-
-## CV Bullet
-
-Built an enterprise incident triage workflow using n8n, RAG-style knowledge retrieval, severity classification, human approval gates, and audit logging; designed for internal IT automation across SAP/Microsoft-style business systems.

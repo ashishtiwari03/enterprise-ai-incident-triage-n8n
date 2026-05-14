@@ -1,4 +1,4 @@
-# Recruiter Summary
+# Project Summary
 
 ## Project Title
 
@@ -6,11 +6,11 @@ Enterprise AI Incident Triage with n8n
 
 ## Short Description
 
-Built a production-style n8n workflow that automates IT incident triage using knowledge retrieval, severity classification, human approval gates, and structured audit output.
+Small n8n workflow for IT incident triage. It receives an incident through a webhook, checks a local runbook knowledge base, classifies severity and risk, and returns a structured response with approval and audit fields.
 
-## Why It Is Relevant
+## Why I Built It
 
-Companies are moving from isolated AI demos to controlled AI automation inside business processes. This project shows how to connect AI-style retrieval and decision support with enterprise workflow rules, escalation, and traceability.
+I wanted a project that connects AI-style retrieval with workflow rules instead of only showing a chatbot. The current version keeps the logic visible in n8n Code nodes, which makes it easier to inspect, test, and extend.
 
 ## Strongest Keywords
 
@@ -23,4 +23,3 @@ Built an enterprise AI incident triage workflow with n8n, RAG-style knowledge re
 ## LinkedIn About-Project Version
 
 I built a small enterprise automation project with n8n that handles IT incident triage from intake to routing. The workflow classifies requests, retrieves relevant runbook guidance, applies risk and severity rules, and decides whether the case can be handled automatically or needs human approval. I focused on the parts that matter in real enterprise AI systems: traceability, escalation, deterministic rules, and a clear path to integration with tools like SAP, Microsoft 365, Jira, or ServiceNow.
-
