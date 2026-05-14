@@ -1,0 +1,205 @@
+{
+  "name": "Enterprise Incident Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enterprise-incident-triage",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6f1a9ae3-83d4-45a4-9655-3f559df6e68c",
+      "name": "Incident Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "enterprise-incident-triage"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst now = new Date().toISOString();\n\nreturn [{\n  json: {\n    request_id: body.request_id || `INC-${Date.now()}`,\n    received_at: now,\n    source: body.source || 'webhook',\n    business_unit: body.business_unit || 'Unknown',\n    summary: body.summary || '',\n    description: body.description || '',\n    affected_users: Number(body.affected_users || 1),\n    system: body.system || 'Unknown',\n    urgency: String(body.urgency || 'medium').toLowerCase(),\n    raw_text: `${body.summary || ''} ${body.description || ''} ${body.system || ''}`.toLowerCase()\n  }\n}];"
+      },
+      "id": "da2a340e-10ce-455f-b7bc-11d1d6434b0d",
+      "name": "Normalize Incident",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const incident = $json;\nconst kb = [\n  {\n    id: 'KB-SAP-ACCESS-001',\n    title: 'SAP role assignment and tile access issues',\n    category: 'Access Management',\n    keywords: ['sap', 's/4hana', 'role', 'roles', 'fiori', 'tile', 'invoice', 'approval', 'access'],\n    guidance: 'Check recent role assignment changes, Fiori catalog mapping, and identity sync status. For more than five affected users, route to identity/access support and request approval before changing roles.'\n  },\n  {\n    id: 'KB-CI-PIPELINE-002',\n    title: 'CI pipeline failure after dependency update',\n    category: 'Developer Productivity',\n    keywords: ['ci', 'pipeline', 'github', 'actions', 'dependency', 'package', 'build', 'release'],\n    guidance: 'Compare lockfile changes, inspect failing job logs, run dependency rollback test, and create a developer ticket with the failing workflow URL.'\n  },\n  {\n    id: 'KB-DASHBOARD-ACCESS-003',\n    title: 'Read-only analytics dashboard access',\n    category: 'Access Management',\n    keywords: ['dashboard', 'power bi', 'reporting', 'read-only', 'sales', 'customer'],\n    guidance: 'Verify manager approval and assign the user to the read-only reporting group. Single-user low-risk requests can be prepared automatically but still require approval.'\n  },\n  {\n    id: 'KB-SECURITY-004',\n    title: 'Suspicious login or credential risk',\n    category: 'Security',\n    keywords: ['phishing', 'credential', 'suspicious', 'login', 'mfa', 'breach', 'password'],\n    guidance: 'Escalate immediately to security operations. Do not auto-resolve. Preserve logs, lock risky sessions, and require human review.'\n  }\n];\n\nconst scored = kb.map(entry => {\n  const score = entry.keywords.reduce((sum, keyword) => sum + (incident.raw_text.includes(keyword) ? 1 : 0), 0);\n  return { ...entry, score };\n}).sort((a, b) => b.score - a.score);\n\nconst match = scored[0].score > 0 ? scored[0] : {\n  id: 'KB-GENERAL-000',\n  title: 'General support triage',\n  category: 'General IT',\n  score: 0,\n  guidance: 'Create a support ticket, collect logs or screenshots, and route to the responsible application owner.'\n};\n\nreturn [{ json: { ...incident, knowledge_match: match } }];"
+      },
+      "id": "449bdf52-4e1b-4427-8162-3586a071fb22",
+      "name": "Retrieve Runbook Guidance",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $json;\nconst text = item.raw_text;\nconst affected = item.affected_users;\nconst urgency = item.urgency;\nconst category = item.knowledge_match.category;\n\nconst securitySignals = ['phishing', 'credential', 'breach', 'suspicious', 'mfa', 'password'].some(term => text.includes(term));\nconst outageSignals = ['outage', 'down', 'unavailable', 'cannot open', 'failed for all'].some(term => text.includes(term));\nconst accessChange = category === 'Access Management' || ['access', 'role', 'permission'].some(term => text.includes(term));\n\nlet severity = 'P4';\nif (securitySignals || affected > 50 || outageSignals && affected > 20) severity = 'P1';\nelse if (urgency === 'high' || affected > 10) severity = 'P2';\nelse if (urgency === 'medium' || affected > 1) severity = 'P3';\n\nlet risk = 'low';\nif (securitySignals || severity === 'P1') risk = 'high';\nelse if (accessChange || severity === 'P2') risk = 'medium';\n\nconst humanApprovalRequired = risk !== 'low' || accessChange || affected > 5;\nconst recommendedAction = humanApprovalRequired\n  ? 'Create ticket and route to the responsible owner before executing changes.'\n  : 'Prepare automated response and keep the case available for service-desk review.';\n\nreturn [{\n  json: {\n    request_id: item.request_id,\n    received_at: item.received_at,\n    source: item.source,\n    business_unit: item.business_unit,\n    system: item.system,\n    summary: item.summary,\n    category,\n    severity,\n    risk,\n    confidence: item.knowledge_match.score >= 3 ? 'high' : item.knowledge_match.score > 0 ? 'medium' : 'low',\n    human_approval_required: humanApprovalRequired,\n    recommended_action: recommendedAction,\n    knowledge_match: {\n      id: item.knowledge_match.id,\n      title: item.knowledge_match.title,\n      guidance: item.knowledge_match.guidance\n    },\n    next_steps: [\n      item.knowledge_match.guidance,\n      humanApprovalRequired ? 'Request human approval before taking action.' : 'Send prepared response and monitor for reopen events.',\n      'Store the decision record for later audit and workflow evaluation.'\n    ],\n    audit: {\n      workflow: 'enterprise-incident-triage',\n      decision_version: '2026.05',\n      automation_mode: humanApprovalRequired ? 'assistive' : 'supervised-auto',\n      rule_basis: ['urgency', 'affected_users', 'category', 'risk_signals'],\n      generated_at: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "06a1dd5a-f515-4af2-bc82-fc4b8fc96236",
+      "name": "Classify Severity and Risk",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1020, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "0c2d184f-7018-4bb2-9b27-8506dbb1f6e4",
+              "leftValue": "={{ $json.human_approval_required }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "371a4aa8-8d68-4657-b533-a979a0dd473b",
+      "name": "Approval Needed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1280, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    queue: 'human-review',\n    ticket_stub: {\n      title: `[${$json.severity}] ${$json.summary}`,\n      assignment_group: $json.category === 'Security' ? 'Security Operations' : $json.category,\n      approval_reason: `${$json.risk} risk / ${$json.affected_users || 'unknown'} affected user(s)`\n    }\n  }\n}];"
+      },
+      "id": "6dcff8f7-3219-4b2a-aef4-28d98e4316db",
+      "name": "Prepare Escalation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    queue: 'service-desk-auto-draft',\n    ticket_stub: null\n  }\n}];"
+      },
+      "id": "f8488d69-105c-47c0-bb7b-a59d244c7bb2",
+      "name": "Prepare Auto Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "32f28626-15d7-40db-82a3-07c8a97cfae3",
+      "name": "Return Triage Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1800, 300]
+    }
+  ],
+  "connections": {
+    "Incident Intake": {
+      "main": [
+        [
+          {
+            "node": "Normalize Incident",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Incident": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Runbook Guidance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Runbook Guidance": {
+      "main": [
+        [
+          {
+            "node": "Classify Severity and Risk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Severity and Risk": {
+      "main": [
+        [
+          {
+            "node": "Approval Needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Needed?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Auto Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Escalation": {
+      "main": [
+        [
+          {
+            "node": "Return Triage Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Auto Draft": {
+      "main": [
+        [
+          {
+            "node": "Return Triage Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-05-13T00:00:00.000Z",
+  "versionId": "8d916bfa-9f32-4467-94ce-7f89dd9fd74e"
+}

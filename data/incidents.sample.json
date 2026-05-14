@@ -1,0 +1,33 @@
+[
+  {
+    "request_id": "INC-2026-0142",
+    "source": "teams",
+    "business_unit": "Finance Operations",
+    "summary": "Unable to access SAP invoice approval app",
+    "description": "Several users in Finance cannot open the invoice approval tile after role changes yesterday.",
+    "affected_users": 18,
+    "system": "SAP S/4HANA",
+    "urgency": "high"
+  },
+  {
+    "request_id": "INC-2026-0177",
+    "source": "service-desk",
+    "business_unit": "Engineering",
+    "summary": "Build pipeline failed after dependency update",
+    "description": "The release branch fails in CI after a package update. Developers need a quick root-cause check before handoff.",
+    "affected_users": 6,
+    "system": "GitHub Actions",
+    "urgency": "medium"
+  },
+  {
+    "request_id": "REQ-2026-0229",
+    "source": "email",
+    "business_unit": "Sales",
+    "summary": "Need access to customer dashboard",
+    "description": "New working student needs read-only dashboard access for weekly customer reporting.",
+    "affected_users": 1,
+    "system": "Power BI",
+    "urgency": "low"
+  }
+]
+

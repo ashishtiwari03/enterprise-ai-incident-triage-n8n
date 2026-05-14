@@ -1,0 +1,31 @@
+[
+  {
+    "id": "KB-SAP-ACCESS-001",
+    "title": "SAP role assignment and tile access issues",
+    "category": "Access Management",
+    "keywords": ["sap", "s/4hana", "role", "roles", "fiori", "tile", "invoice", "approval", "access"],
+    "guidance": "Check recent role assignment changes, Fiori catalog mapping, and identity sync status. For more than five affected users, route to identity/access support and request approval before changing roles."
+  },
+  {
+    "id": "KB-CI-PIPELINE-002",
+    "title": "CI pipeline failure after dependency update",
+    "category": "Developer Productivity",
+    "keywords": ["ci", "pipeline", "github", "actions", "dependency", "package", "build", "release"],
+    "guidance": "Compare lockfile changes, inspect failing job logs, run dependency rollback test, and create a developer ticket with the failing workflow URL."
+  },
+  {
+    "id": "KB-DASHBOARD-ACCESS-003",
+    "title": "Read-only analytics dashboard access",
+    "category": "Access Management",
+    "keywords": ["dashboard", "power bi", "reporting", "read-only", "sales", "customer"],
+    "guidance": "Verify manager approval and assign the user to the read-only reporting group. Single-user low-risk requests can be prepared automatically but still require approval."
+  },
+  {
+    "id": "KB-SECURITY-004",
+    "title": "Suspicious login or credential risk",
+    "category": "Security",
+    "keywords": ["phishing", "credential", "suspicious", "login", "mfa", "breach", "password"],
+    "guidance": "Escalate immediately to security operations. Do not auto-resolve. Preserve logs, lock risky sessions, and require human review."
+  }
+]
+
