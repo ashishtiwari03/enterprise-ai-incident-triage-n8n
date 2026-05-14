@@ -4,6 +4,20 @@ Production-style workflow automation for internal IT support. The project uses n
 
 This was built to mirror the kind of AI automation now appearing in enterprise environments: controlled workflows, deterministic routing, retrieval-grounded assistance, and escalation gates instead of a loose chatbot.
 
+## Workflow Preview
+
+### n8n Workflow
+
+![Workflow](screenshots/workflow-canvas.png)
+
+### API Test
+
+![API Test](screenshots/powershell-test.png)
+
+### Execution View
+
+![Execution](screenshots/execution-view.png)
+
 ## What It Does
 
 - Accepts an incident through a webhook
